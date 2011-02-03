@@ -1,8 +1,6 @@
 # ecopush
 
-This is a template for github.
-
-FIXME: write description
+-  FIXME: write description
 
 ## Usage
 
