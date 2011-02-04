@@ -1,12 +1,13 @@
 * ecopush
 
--  FIXME: write description
+This is a project repository for the Economic Games group of Research in Artificial Intelligence, Spring 2011, at [[http://hampshire.edu][Hampshire College]]. This project consists of
+a wiki, implementations of game theoretic applications using the Push Genetic Programming Platform and the Clojure programming Language. 
 
-## Usage
+* Usage
 
-FIXME: write
+Usage section upcoming. 
 
-## License
+* License
 
 Copyright (C) 2010 FIXME
 
