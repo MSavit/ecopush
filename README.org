@@ -1,4 +1,4 @@
-# ecopush
+* ecopush
 
 -  FIXME: write description
 
