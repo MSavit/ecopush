@@ -2,3 +2,5 @@
 * links
 ** git 
 [[http://www.eecs.harvard.edu/~cduan/technical/git/][understanding git conceptually]]
+
+Micah!
