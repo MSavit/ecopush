@@ -2,9 +2,7 @@
 * links
 ** git 
 [[http://www.eecs.harvard.edu/~cduan/technical/git/][understanding git conceptually]]
+** name test
+*** Micah!
+*** Matt Feller
 
-<<<<<<< HEAD
-Micah!
-=======
-Matt Feller
->>>>>>> 4836f16e91b2b441c9d2e9604ff579f2928fb4b4
