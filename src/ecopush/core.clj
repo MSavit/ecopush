@@ -2,9 +2,7 @@
   (:gen-class)
   (:use [ecopush.push] [clojure.contrib.math]))
 
-;;;;;;;;;;;;;
-;; globals ;;
-;;;;;;;;;;;;;
+;;; globals
 
 (def *capacity-list* (range 1 20 1))
 (def *popsize* 10)
@@ -15,9 +13,7 @@
 
 (def reggie1 @registered-instructions)
 
-;;;;;;;;;;
-;; game ;;
-;;;;;;;;;;
+;;; game
 
 (defn push-wrapper
   "sanitizes push return"
