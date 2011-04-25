@@ -8,9 +8,8 @@
 (def *popsize* 10)
 (def *rounds-num* 5)
 (def *nonentry-payoff* 1)
-;; (defrecord Player [number choices payoffs capacity code])
-
-(defstruct player :number :choices :payoffs :capacity :code)
+(defrecord Player [number choices payoffs capacity code])
+;; (defstruct player :number :choices :payoffs :capacity :code)
 
 (def reggie1 @registered-instructions)
 
