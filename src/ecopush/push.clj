@@ -1,5 +1,4 @@
 (ns ecopush.push
-  ;; (:gen-class)
   (:require [clojure.zip :as zip]
 	    [clojure.contrib.math :as math]
 	    [clojure.contrib.seq-utils :as seq-utils]
