@@ -1,3 +1,4 @@
+;;; core for ecopush
 (ns ecopush.core
   (:gen-class)
   (:use [ecopush.push] [clojure.contrib.math]))
@@ -15,9 +16,10 @@
 
 ;;; game
 
+;;; needs to be improved. Somebody should do this 
 (defn push-wrapper
   "sanitizes push return"
-  [c]					; needs to be thought out
+  [c]					
   (cond
    (nil? c) 0
    (neg? c) 0
@@ -26,18 +28,17 @@
 
 (defn push-strat
   "player logic for push"
-					;  [player-decisions all-decisions push-code]
-  [player-code ]
-  ;; push player-decisions onto stack (which)
-  ;; push all-decisions onto stack (which?)
-  ;; eval push code here
-  ;; track execution into db?
-  (push-wrapper (top-item :integer (run-push
-				    player-code
-				    (->>
-				     (make-push-state)
-				     (push-item 1 :integer)
-				     (push-item 0 :integer))))))
+  [player-code player-decisions all-decisions]
+  (push-wrapper
+   (top-item :integer
+	     (run-push
+	      player-code
+	      (->>
+	       (make-push-state)
+	       (push-item player-decisions :auxiliary) ; push player-decisions onto aux stack 
+	       (push-item all-decisions :auxiliary) ; push all-decisions onto aux stack 
+	       (push-item 1 :integer)
+	       (push-item 0 :integer))))))
 
 (defn player-logic [player-code player-decisions all-decisions]
   "player logic"
