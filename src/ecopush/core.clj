@@ -7,8 +7,9 @@
 (def *capacity-list* (range 1 20 1))
 (def *popsize* 10)
 (def *rounds-num* 5)
-
+(def *nonentry-payoff* 1)
 ;; (defrecord Player [number choices payoffs capacity code])
+
 (defstruct player :number :choices :payoffs :capacity :code)
 
 (def reggie1 @registered-instructions)
@@ -27,7 +28,7 @@
 (defn push-strat
   "player logic for push"
 					;  [player-decisions all-decisions push-code]
-  [player-code]
+  [player-code ]
   ;; push player-decisions onto stack (which)
   ;; push all-decisions onto stack (which?)
   ;; eval push code here
@@ -42,32 +43,39 @@
 (defn player-logic [player-code player-decisions all-decisions]
   "player logic"
   ;; (rand-int 2)
+  ;; (push-strat player-code player-decisions all-decisions)
   (push-strat player-code)
   )
 
 (defn create-players [popsize capacity pushlist]
-  "create the initial struct of players with empty keys"
-  (for [x (range 0 popsize)]		; what's faster than for loop?
-    ;; (Player. x [] [] capacity (nth pushlist x))))
-    (struct-map player :number x :choices [] :payoffs [] :capacity capacity
-    		:code (cond		
-    		       (< (count pushlist) (inc x)) nil
-    		       :else (nth pushlist x)))))
+  "create the initial struct of players with empty keys. If pushlist is shorter than population size,
+rest of population has last element of pushlist"
+  (for [x (range 0 popsize)]
+     (Player. x [] [] capacity (nth pushlist x (last pushlist)))))
+
+;; (struct-map player :number x :choices [] :payoffs [] :capacity capacity
+    ;; 		:code (cond		
+    ;; 		       (< (count pushlist) (inc x)) nil
+    ;; 		       :else (nth pushlist x)))))
 
 (defn get-decisions
-  "returns a list of all player decisions for the past round"
+  "returns list of all player decisions for past round"
   [playerlist]
-  (map #(last (% :choices)) playerlist))
+  (map #(last (:choices %)) playerlist))
+  ;; (map #(last (% :choices)) playerlist))
 
 (defn get-all-decisions
-  "returns a list of all decisions for all players (before current round)"
+  "returns list of all decisions for all players (before current round)"
   [playerlist]
-  (map #(% :choices) playerlist))
+  (map #(:choices %) playerlist))
+
+  ;; (map #(% :choices) playerlist))
 
 (defn get-player-decisions
   "returns a list of individual player's past decisions"
   [playernum playerlist]
-  (nth (get-all-decisions playerlist) playernum))
+  (-> playerlist get-all-decisions (nth playernum)))
+  ;; (nth (get-all-decisions playerlist) playernum))
 
 (defn payoff-sum
   "sum the player decisions with proper weights"
@@ -75,12 +83,45 @@
   (+ 1 (* 2 (- capacity			; constants as def (from paper) 
 	       (apply + decisions)))))			; integrate other weights 
 
+;;; check to see if this works
 (defn apply-payoff			
   "add the payoff to each player"
   [payoff player-struct]
-  (if (= (last (player-struct :choices)) 0)
-    (update-in player-struct [:payoffs] conj 1) ; do these better
-    (update-in player-struct [:payoffs] conj payoff)))
+  (->> (if (zero? (last (:choices player-struct))) *nonentry-payoff* payoff)
+       (update-in player-struct [:payoffs] conj)))
+  ;; (letfn [(payply [x] (update-in player-struct [:payoffs] conj x))
+  ;; 	  (decpay [] (if (zero? (last (:choices player-struct)))
+  ;; 		       *nonentry-payoff*
+  ;; 		       payoff))]
+  ;;   (-> decpay
+  ;; 	payply)))
+
+;; (->>
+;;  (if (zero? (last (:choices player-structs)))
+;;    *nonentry-payoff*
+;;    payoff)
+;;  (update-in player-struct [:payoffs] conj))
+
+;; (-> player-structs
+;;     (:choices)
+;;     (last)
+;;     (zero?))
+
+    ;; (payply (decpay))
+    ;; (if (zero? (last (:choices player-struct)))
+    ;;   (payply *nonentry-payoff*)
+    ;;   (payply payoff))))
+
+;; (payply
+;;  (if (zero? (last (:choices player-struct)))
+;;    *nonentry-payoff*
+;;    payoff))
+
+  ;; (if-let [pay (zero? (last (:choices player-struct)))]
+  ;;   )
+  ;; (if (zero? (last (player-struct :choices)))
+  ;;   (update-in player-struct [:payoffs] conj *nonentry-payoff*) ; do these better
+  ;;   (update-in player-struct [:payoffs] conj payoff)))
 
 (defn calculate-payoff
   "returns list of players with payoff applied"
@@ -134,9 +175,6 @@
 			     history nil
 			     ancestors nil}}]
   (pushcoll. individuals errors total-error history ancestors))
-
-
-		     
 
 (defn scores-map
   "return this players with their payoff scores for game"
