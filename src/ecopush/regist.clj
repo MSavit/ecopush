@@ -211,3 +211,82 @@
                 me)))
               :boolean state)
       state)))
+
+;;;;;;;;;;;;;;;;
+;; strategies ;;
+;;;;;;;;;;;;;;;;
+
+;;; in strategies, don't vary the capacity but keeping same round number
+
+;; (define-registered decision-info-me
+;;   (fn [state]
+;;     (let [astate (stack-ref :auxiliary 0 state)]
+;;       (->> state
+;; 	   (pop-item :auxiliary)
+;; 	   (push-item (right-in astate) :auxiliary)))))
+
+
+(defn strat-1 [] "entry strategy" 1)
+(defn strat-0 [] "stay-out strategy" 0)
+
+;; probabilistic entry choice rules
+
+;;; linear choice rule
+(defn entry-prob-lin
+  "linear choice rule for probability of agent entry"
+  [strat-1 strat-0]
+  (/ strat-1 (+ strat-1 strat-0)))
+
+;;; exponential choice rule
+(defn entry-prob-exp
+  "exponential choice rule for probability of agent entry"
+  []
+  nil)
+
+;; learning models
+
+;;; simple reinforcement
+(defn entry-lm-sr
+  "returns probabilities for simple reinforcement"
+  []
+  ;; recursive
+  ;; p6 of paper
+  nil)
+
+;;; hypothetical reinforcement
+(defn entry-lm-hr
+  "returns probabilities for hypothetical reinforcement"
+  [all-decisions]			; past-decisions as well?
+  ;; recursive
+  ;; p6 of paper
+  nil)
+
+(defn entry-prob-sfp
+  "stochastic fictitious play"		; combine exp prob and entry hr
+  []
+  nil)
+
+;; stochastic approximation (p.6)
+(defn stoch-approx
+  "calculates expected motion of player's strategy adjustment"
+  []
+  nil)
+
+;;;;;;;;;;;;;;;;;;;;;;
+;; equilibria tests ;;
+;;;;;;;;;;;;;;;;;;;;;;
+
+(defn eq-nash-pure?
+  "returns whether game is pure Nash equilibrium"
+  []
+  nil)
+
+(defn eq-nash-sme?
+  "returns whether game is symmetric mixed Nash equilibrium"
+  []
+  nil)
+
+(defn eq-nash-asm?
+  []
+  "returns whether game is asymmetric mixed equilibria"
+  nil)

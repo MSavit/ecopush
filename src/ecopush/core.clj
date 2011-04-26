@@ -131,30 +131,12 @@
   [pushlist]
   (let [data (game pushlist)]
     (for [x (range *popsize*)]
-      (apply + (map #(apply + (:payoffs %)) (filter #(= (:number %) x) data))))))
+      (apply + (pmap #(apply + (:payoffs %)) (filter #(= (:number %) x) data))))))
 
-(defn get-my-move
-  [data game round me]
-  (nth (:choices (first (filter #(= (:number %) me) (filter #(= (:capacity %) (-
-(* round 2) 1)) data)))) game))
-
-(defn get-round
-  [data game round]
-  (map #(nth % game) (filter #(= (:capacity %) (- (* round 2) 1)) data)))
-
-(defn payoff-sum
-  "sum the player decisions with proper weights"
-  [decisions capacity]
-  (+ 1 (* 2 (- capacity			; constants as def (from paper)
-	       (apply + decisions)))))			; integrate other weights
-
-;;; build Strategy list
-;; (lazy-cat (repeatedly 1 #(Strategy. nil "push")) (take (dec *popsize*) (repeatedly #(Strategy. (quote (rand-int 2)) "clj"))))
-
-(defn fit
-  [prog]
-  (list (* 10
-     (first (scores-map (cons (Strategy. prog "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))))))
+;; (defn fit
+;;   [prog]
+;;   (list (* 10
+;;      (first (scores-map (cons (Strategy. prog "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))))))
 
 ;; (doall
 ;;  (list (let [scores (scores-map (cons (Strategy. prog "push") (repeatedly 1 #(Stragegy. (quote (rand-int 2)) "clj"))))
@@ -170,7 +152,7 @@
 ;;   [program]
 ;;   (count (scores-map (lazy-cat (repeatedly 1 #(Strategy. program "push")) (take (dec *popsize*) (repeatedly #(Strategy. (quote (rand-int 2)) "clj")))))))
 
-(defn fit
+(defn fit				;should wrap fn
   "preliminary fitness function"
   [program]
   (doall
@@ -178,7 +160,6 @@
 	 best (apply max scores)
 	 gpscore (first scores)]
      (list (* 100 (- best gpscore))))))
-
 
 (pushgp
  :error-function (fn [program]
@@ -195,8 +176,7 @@
   :mutation-probability 0.45
   :crossover-probability 0.45
   :simplification-probability 0.0
-  :reproductive-simplifications 10
- )
+  :reproductive-simplifications 10)
 
 (defn scores-map1
   "return this players with their payoff scores for game"
@@ -210,13 +190,6 @@
   [pushlist]
   (/ (apply + (scores-map pushlist)) *popsize*))
 
-;; (pushgp
-;;  :error-function (fn [program]
-;; 		   (- 500 (average-payoff (repeat *popsize* program))))
-;;  :max-points 100
-;;  :population-size 50
-;;  :trivial-geography-radius 10)
-
 (defn winner-map
   "returns the winners of the game sorted by payoffs. Key is player number, value is payoff total"
   [pushlist]
@@ -225,157 +198,11 @@
 	     (for [x (range *popsize*)]
 	       [(keyword (str x)) (apply + (map #(apply + (:payoffs %)) (filter #(= (:number %) x) data)))])))) ; messy, clean w/ flatten 
 
-;;;;;;;;;;;;;;;;
-;; strategies ;;
-;;;;;;;;;;;;;;;;
-
-;;; in strategies, don't vary the capacity but keeping same round number
-
-;; (define-registered decision-info-me
-;;   (fn [state]
-;;     (let [astate (stack-ref :auxiliary 0 state)]
-;;       (->> state
-;; 	   (pop-item :auxiliary)
-;; 	   (push-item (right-in astate) :auxiliary)))))
-
-
-(defn strat-1 [] "entry strategy" 1)
-(defn strat-0 [] "stay-out strategy" 0)
-
-;; probabilistic entry choice rules
-
-;;; linear choice rule
-(defn entry-prob-lin
-  "linear choice rule for probability of agent entry"
-  [strat-1 strat-0]
-  (/ strat-1 (+ strat-1 strat-0)))
-
-;;; exponential choice rule
-(defn entry-prob-exp
-  "exponential choice rule for probability of agent entry"
-  []
-  nil)
-
-;; learning models
-
-;;; simple reinforcement
-(defn entry-lm-sr
-  "returns probabilities for simple reinforcement"
-  []
-  ;; recursive
-  ;; p6 of paper
-  nil)
-
-;;; hypothetical reinforcement
-(defn entry-lm-hr
-  "returns probabilities for hypothetical reinforcement"
-  [all-decisions]			; past-decisions as well?
-  ;; recursive
-  ;; p6 of paper
-  nil)
-
-(defn entry-prob-sfp
-  "stochastic fictitious play"		; combine exp prob and entry hr
-  []
-  nil)
-
-;; stochastic approximation (p.6)
-(defn stoch-approx
-  "calculates expected motion of player's strategy adjustment"
-  []
-  nil)
-
 (defn -main [& args]
   (println "test of main")
 
   ;; (use (symbol (first args)))
-  (System/exit 0)
-  )
-
-;;;;;;;;;;;;;;;;;;;;;;
-;; equilibria tests ;;
-;;;;;;;;;;;;;;;;;;;;;;
-
-(defn eq-nash-pure?
-  "returns whether game is pure Nash equilibrium"
-  []
-  nil)
-
-(defn eq-nash-sme?
-  "returns whether game is symmetric mixed Nash equilibrium"
-  []
-  nil)
-
-(defn eq-nash-asm?
-  []
-  "returns whether game is asymmetric mixed equilibria"
-  nil)
-
-;; random push code
-;; (random-code 100 (concat @registered-instructions
-;;                              (list (fn [] (lrand-int 100))
-;; 				   (fn [] (lrand)))))
-
-;; (run-push '(1 1 integer_add integer_add) (->>
-;; 					  (make-push-state)
-;; 					  (push-item 3 :integer)
-;; 					  (push-item 7 :integer)))
-
-;; (first (:integer (run-push (random-code 100 @registered-instructions) (->>
-;; 								       (make-push-state)
-;; 								       (push-item 1 :integer)
-;; 								       (push-item 0 :integer)))))
-;; (repeatedly 5 #(push-strat))
-
-;; (repeatedly 10 #(random-code 10 @registered-instructions)) ; generate random players 
-   
-	     
-;;;;;;;;;;
-;; push ;;
-;;;;;;;;;;
-
-;; (define-registered out
-;;   (fn [state]
-;;     (let [astate (stack-ref :auxiliary 0 state)]
-;;       (->> state
-;; 	   (pop-item :auxiliary)
-;; 	   (push-item 0 :auxiliary)))))
-
-;; (define-registered in
-;;   (fn [state]
-;;     (let [astate (stack-ref :auxiliary 0 state)]
-;;       (->> state
-;; 	   (pop-item :auxiliary)
-;; 	   (push-item 0 :auxiliary)))))
-
-;; populate game with list of player code
-;; sum payoffs for each player
-;; (1/ (player.payoffsum / maxpossible.payoffsum)) * constant multiplier
-;; sum total mean payoff? (for collective)
-
-;; are we selecting for a set of push players? - evolve collectively 
-;; are we selecting for one individual player? - evolve individually
-;; are we going to mix push programs and other strategies? -
-;;;; evolve individually / use beat other strategy as fitness function for collective
-;; population size? for collective vs. individual
-
-;; reproduction - within game / across games
-
-;; (defn gp-start
-;;   []
-;;   (pushgp
-;;    :error-function (fn [program]
-;; 		     (map #(- 3000 %) (scores-map))))
-;;   :atom-generators (concat
-;; 		    (registered-for-type :integer)
-;; 		    (registered-for-type :exec)
-;; 		    (registered-for-type :boolean)
-;; 		    (list
-;; 		     'boolean_and
-;; 		     'boolean_not
-;; 		     'boolean_or))
-;;   :error-threshold 40
-;;   :reproduction-simplifications 10)
+  (System/exit 0))
 
 ;;;;;;;;;;
 ;; push ;;
