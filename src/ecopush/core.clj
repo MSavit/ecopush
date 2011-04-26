@@ -1,7 +1,8 @@
-;;; Core file for ecopush
 (ns ecopush.core
+  "Core game for ecopush"
   (:gen-class)
-  (:use [ecopush.push] [clojure.contrib.math]))
+  (:use [ecopush.push]
+	[clojure.contrib.math]))
 
 ;;; Globals
 
@@ -24,9 +25,6 @@
 
 ;;; Each player is a record. 
 (defrecord Player [number choices payoffs capacity strategy])
-
-;;; deref registered instructions once so we don't have to do it all the time
-(def reggie1 @registered-instructions)
 
 ;;; Game
 
@@ -67,8 +65,8 @@
 (defn create-players [popsize capacity pushlist]
   "Create the initial struct of players with empty keys. If pushlist is shorter than population size, rest of population has last element of pushlist"
   (for [x (range 0 popsize)]
-    (Player. x [] [] capacity (Strategy. (:code (nth pushlist x (last pushlist))) 
-					 (:type (nth pushlist x (last pushlist)))))))
+    (let [xloc (nth pushlist x (last pushlist))]
+      (Slayer. x [] [] capacity (Strategy. (:code xloc) (:type xloc))))))
 
 ;;; potentially catch nil as it may errors
 ;;; see (get-decisions) run after create players 
@@ -92,7 +90,6 @@
   [decisions capacity]
   (+ 1 (* 2 (- capacity			; constants as def (from paper) 
 	       (apply + decisions)))))			; integrate other weights 
-
 
 (defn apply-payoff			
   "add the payoff to each player"
@@ -121,7 +118,7 @@
 	  (player-decide
 	   (play-rounds (dec roundnum) capacity pushlist))
 	  capacity)))
-  
+
 (defn game
   "returns list of players with payoffs and choices in list of rounds"
   [pushlist]
@@ -135,6 +132,24 @@
   (let [data (game pushlist)]
     (for [x (range *popsize*)]
       (apply + (map #(apply + (:payoffs %)) (filter #(= (:number %) x) data))))))
+
+(defn get-my-move
+  [data game round me]
+  (nth (:choices (first (filter #(= (:number %) me) (filter #(= (:capacity %) (-
+(* round 2) 1)) data)))) game))
+
+(defn get-round
+  [data game round]
+  (map #(nth % game) (filter #(= (:capacity %) (- (* round 2) 1)) data)))
+
+(defn payoff-sum
+  "sum the player decisions with proper weights"
+  [decisions capacity]
+  (+ 1 (* 2 (- capacity			; constants as def (from paper)
+	       (apply + decisions)))))			; integrate other weights
+
+
+
 
 (defn scores-map1
   "return this players with their payoff scores for game"

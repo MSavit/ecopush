@@ -2527,10 +2527,11 @@ $(document).ready(function() {
 
 })
 </script><title>ecopush -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">ecopush</h1><h2 class="project-version">1.0.0-SNAPSHOT</h2><br /><p>Robust Market Entry Game Players using Genetic Programming</p>
-</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.2.0</td></tr><tr><td class="dep-name">org.clojure/clojure-contrib</td><td class="dotted"><hr /></td><td class="dep-version">1.2.0</td></tr></table></div><div class="dependencies"><h3>dev dependencies</h3><table><tr><td class="dep-name">swank-clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.2.1</td></tr><tr><td class="dep-name">marginalia</td><td class="dotted"><hr /></td><td class="dep-version">0.5.0</td></tr><tr><td class="dep-name">lein-clojars</td><td class="dotted"><hr /></td><td class="dep-version">0.6.0</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#ecopush.core">ecopush.core</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#ecopush.core" name="ecopush.core"><h1 class="project-name">ecopush.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>Core file for ecopush</p>
+</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.2.0</td></tr><tr><td class="dep-name">org.clojure/clojure-contrib</td><td class="dotted"><hr /></td><td class="dep-version">1.2.0</td></tr></table></div><div class="dependencies"><h3>dev dependencies</h3><table><tr><td class="dep-name">swank-clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.2.1</td></tr><tr><td class="dep-name">marginalia</td><td class="dotted"><hr /></td><td class="dep-version">0.5.0</td></tr><tr><td class="dep-name">lein-clojars</td><td class="dotted"><hr /></td><td class="dep-version">0.6.0</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#ecopush.core">ecopush.core</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#ecopush.core" name="ecopush.core"><h1 class="project-name">ecopush.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>Core game for ecopush</p>
 </td><td class="codes" /><pre class="brush: clojure">(ns ecopush.core
   (:gen-class)
-  (:use [ecopush.push] [clojure.contrib.math]))</pre></tr><tr><td class="docs"><p>Globals</p>
+  (:use [ecopush.push]
+	[clojure.contrib.math]))</pre></tr><tr><td class="docs"><p>Globals</p>
 </td><td class="codes" /></tr><tr><td class="docs"><p>List of capacities for rounds. These are the odd numbers between 0 and 20.</p>
 </td><td class="codes" /><pre class="brush: clojure">(def ^{:doc }
   *capacity-list* (range 1 20 1))</pre></tr><tr><td class="docs"><p>The number of rounds is size of the capacity list, because each round represents a market entry game with a fixed capacity.</p>
@@ -2543,8 +2544,7 @@ $(document).ready(function() {
 Code is the actual code, and type specifies whether or not the code is clojure or push.
 Type can potentiall be extended to other jvm languages. type field can currently be either "push" or "clj". </p>
 </td><td class="codes" /><pre class="brush: clojure">(defrecord Strategy [code type])</pre></tr><tr><td class="docs"><p>Each player is a record. </p>
-</td><td class="codes" /><pre class="brush: clojure">(defrecord Player [number choices payoffs capacity strategy])</pre></tr><tr><td class="docs"><p>deref registered instructions once so we don't have to do it all the time</p>
-</td><td class="codes" /><pre class="brush: clojure">(def reggie1 @registered-instructions)</pre></tr><tr><td class="docs"><p>Game</p>
+</td><td class="codes" /><pre class="brush: clojure">(defrecord Player [number choices payoffs capacity strategy])</pre></tr><tr><td class="docs"><p>Game</p>
 </td><td class="codes" /></tr><tr><td class="docs"><p>Handles exceptions when pulling off the :integer stack to produce 1,0.</p>
 
 <p>(player-logic) is expected to return a 1 or 0. However, pulling values off the :integer stack can return nil, so sanitize the input.
@@ -2567,15 +2567,15 @@ Below is an example that returns 1 if the number is even, and 0 if it is odd. </
 			    (push-item all-decisions :auxiliary) ; push all-decisions onto aux stack 
 			    (push-item 1 :integer)
 			    (push-item 0 :integer))))))</pre></tr><tr><td class="docs"><p>Logic for players. If the player has a strategy in push, then run the push-code with push-strat.
-If the player has a clojure strategy, eval the strategy. Clojure strategies have access to player-decisions and all-decisions. </p>
+If the player has a clojure strategy, eval the strategy.
+Clojure strategies have access to player-decisions and all-decisions. </p>
 </td><td class="codes" /><pre class="brush: clojure">(defn player-logic [player-strategy player-decisions all-decisions]
   "Evaluates player strategy code based on strategy type"
   (if (= (:type player-strategy) "push")
     (push-strat (:code player-strategy) player-decisions all-decisions)
     (eval (:code player-strategy))))</pre></tr><tr><td class="docs"><p>Pushlist is a list of strategy records</p>
 </td><td class="codes" /><pre class="brush: clojure">(defn create-players [popsize capacity pushlist]
-  "Create the initial struct of players with empty keys. If pushlist is shorter than population size,
-rest of population has last element of pushlist"
+  "Create the initial struct of players with empty keys. If pushlist is shorter than population size, rest of population has last element of pushlist"
   (for [x (range 0 popsize)]
     (Player. x [] [] capacity (Strategy. (:code (nth pushlist x (last pushlist))) 
 					 (:type (nth pushlist x (last pushlist)))))))</pre></tr><tr><td class="docs"><p>returns list of all player decisions for past round</p>
@@ -2624,7 +2624,18 @@ see (get-decisions) run after create players </p>
   [pushlist]
   (let [data (game pushlist)]
     (for [x (range *popsize*)]
-      (apply + (map #(apply + (:payoffs %)) (filter #(= (:number %) x) data))))))</pre></tr><tr><td class="docs"><p>return this players with their payoff scores for game</p>
+      (apply + (map #(apply + (:payoffs %)) (filter #(= (:number %) x) data))))))</pre></tr><tr><td class="docs">
+</td><td class="codes" /><pre class="brush: clojure">(defn get-my-move
+  [data game round me]
+  (nth (:choices (first (filter #(= (:number %) me) (filter #(= (:capacity %) (-
+(* round 2) 1)) data)))) game))</pre></tr><tr><td class="docs">
+</td><td class="codes" /><pre class="brush: clojure">(defn get-round
+  [data game round]
+  (map #(nth % game) (filter #(= (:capacity %) (- (* round 2) 1)) data)))</pre></tr><tr><td class="docs"><p>sum the player decisions with proper weights</p>
+</td><td class="codes" /><pre class="brush: clojure">(defn payoff-sum
+  [decisions capacity]
+  (+ 1 (* 2 (- capacity			; constants as def (from paper)
+	       (apply + decisions)))))			; integrate other weights</pre></tr><tr><td class="docs"><p>return this players with their payoff scores for game</p>
 </td><td class="codes" /><pre class="brush: clojure">(defn scores-map1
   [pushlist]
   (let [data (game pushlist)]
