@@ -1,8 +1,8 @@
 (ns ecopush.core
   "Core game for ecopush"
-  (:gen-class)
   (:use [ecopush.push]
-	[clojure.contrib.math]))
+	[clojure.contrib.math])
+  (:gen-class))
 
 ;;; Globals
 
@@ -73,12 +73,12 @@
 (defn get-decisions
   "returns list of all player decisions for past round"
   [playerlist]
-  (map #(last (:choices %)) playerlist))
+  (pmap #(last (:choices %)) playerlist))
 
 (defn get-all-decisions
   "returns list of all decisions before current round for all players"
   [playerlist]
-  (map #(:choices %) playerlist))
+  (pmap #(:choices %) playerlist))
 
 (defn get-player-decisions
   "returns a list of individual player's past decisions"
@@ -101,13 +101,13 @@
   "returns list of players with payoff applied"
   [playerlist capacity]
   (let [payoff (payoff-sum (get-decisions playerlist) capacity)]
-    (map #(apply-payoff payoff %) playerlist)))
+    (pmap #(apply-payoff payoff %) playerlist)))
 
 (defn player-decide
   "player decide working"
   [playerlist]
   (let [past-decisions (get-all-decisions playerlist)]
-    (map #(update-in % [:choices] conj (player-logic (:strategy %) (:choices %) past-decisions)) playerlist)))
+    (pmap #(update-in % [:choices] conj (player-logic (:strategy %) (:choices %) past-decisions)) playerlist)))
 
 (defn play-rounds
   "function to play rounds. returns list of player structs"
@@ -151,35 +151,51 @@
 ;;; build Strategy list
 ;; (lazy-cat (repeatedly 1 #(Strategy. nil "push")) (take (dec *popsize*) (repeatedly #(Strategy. (quote (rand-int 2)) "clj"))))
 
-;; (defn fit
-;;   [prog]
-;;   (* 10
-;;      (first (scores-map (cons (Strategy. prog "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj")))))))
-
 (defn fit
   [prog]
-  1000)
+  (list (* 10
+     (first (scores-map (cons (Strategy. prog "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))))))
+
+;; (doall
+;;  (list (let [scores (scores-map (cons (Strategy. prog "push") (repeatedly 1 #(Stragegy. (quote (rand-int 2)) "clj"))))
+;; 	     best (apply max scores)
+;; 	     gpres (first scores)]
+;; 	 (* 100 (- best gpres)))))
+
+;; (defn fit
+;;   [prog]
+;;   1000)
 
 ;; (defn fit
 ;;   [program]
 ;;   (count (scores-map (lazy-cat (repeatedly 1 #(Strategy. program "push")) (take (dec *popsize*) (repeatedly #(Strategy. (quote (rand-int 2)) "clj")))))))
 
+(defn fit
+  "preliminary fitness function"
+  [program]
+  (doall
+   (let [scores (scores-map (cons (Strategy. program "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))
+	 best (apply max scores)
+	 gpscore (first scores)]
+     (list (* 100 (- best gpscore))))))
+
 
 (pushgp
  :error-function (fn [program]
-		   (doall 1000)
-		   ;; (fit program)
-		   )
- :atom-generators (concat
+		   (doall
+		    (let [scores (scores-map (cons (Strategy. program "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))
+			  best (apply max scores)
+			  gpres (first scores)]
+		      (list (* 100 (- best gpres))))))
+  :atom-generators (concat
 		   (registered-for-type :integer)
 		   (registered-for-type :exec)
-		   (registered-for-type :auxiliary)
-		   (list (fn [] (rand-int 100))
-			 'in))
- :mutation-probability 0.45
- :crossover-probability 0.45
- :simplification-probability 0.0
- :reproductive-simplifications 10
+		   (registered-for-type :auxiliary))
+  :population-size 10
+  :mutation-probability 0.45
+  :crossover-probability 0.45
+  :simplification-probability 0.0
+  :reproductive-simplifications 10
  )
 
 (defn scores-map1
