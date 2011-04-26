@@ -1,25 +1,41 @@
-;;; core for ecopush
+;;; Core file for ecopush
 (ns ecopush.core
   (:gen-class)
   (:use [ecopush.push] [clojure.contrib.math]))
 
-;;; globals
+;;; Globals
 
-(def *capacity-list* (range 1 20 1))
-(def *popsize* 10)
-(def *rounds-num* 5)
-(def *nonentry-payoff* 1)
+(def ^{:doc "List of capacities for rounds. These are the odd numbers between 0 and 20."}
+  *capacity-list* (range 1 20 1))
+
+(def ^{:doc "The number of rounds is size of the capacity list, because each round represents a market entry game with a fixed capacity."}
+  *rounds-num* (count *capacity-list*)) ; the above is not true and should be fixed
+
+(def ^{:doc "population size (number of players in game"}
+  *popsize* 10)
+
+(def ^{:doc "payoff for staying out"}
+  *nonentry-payoff* 1)
+
+;;; Strategy record. Code is the actual code, and type specifies whether or not the code is clojure or push. Type can potentiall be extended to other jvm languages  
+(defrecord Strategy [code type])
+
+;;; Each player is a record. Player record has the fields number, choices, payoffs, capacity, code.
 (defrecord Player [number choices payoffs capacity code])
+
 ;; (defstruct player :number :choices :payoffs :capacity :code)
 
+;;; deref registered instructions once so we don't have to do it all the time
 (def reggie1 @registered-instructions)
 
-;;; game
+;;; Game
 
-;;; needs to be improved. Somebody should do this 
+
+;;; (player-logic) is expected to return a 1 or 0. However, pulling values off the :integer stack can return nil, so sanitize the input.
+;;; Below is an example that returns 1 if the number is even, and 0 if it is odd. 
 (defn push-wrapper
-  "sanitizes push return"
-  [c]					
+  "Handles exceptions when pulling off the :integer stack to produce 1,0."
+  [c]
   (cond
    (nil? c) 0
    (neg? c) 0
@@ -41,7 +57,7 @@
 	       (push-item 0 :integer))))))
 
 (defn player-logic [player-code player-decisions all-decisions]
-  "player logic"
+  "evaluates player code"
   ;; (rand-int 2)
   ;; (push-strat player-code player-decisions all-decisions)
   (push-strat player-code)
@@ -376,3 +392,5 @@ rest of population has last element of pushlist"
 ;;; build game around it
 ;;; jason nobel richard watson -
 ;;; juxt - http://richhickey.github.com/clojure/clojure.core-api.html#clojure.core/juxt
+
+;;; push here

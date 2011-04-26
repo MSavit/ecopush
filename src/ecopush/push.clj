@@ -5,14 +5,14 @@
 	    [clojure.walk :as walk]
 	    [clojure.contrib.string :as string]))
 
-(defn bt []
+(defn bt 
   "backtrace abbreviation, to ease debugging"
+  []
   (.printStackTrace *e))
 
-;;;;;;;;;;;;;
-;; globals ;;
-;;;;;;;;;;;;;
+;; Globals
 
+;;; Stack types
 (def push-types '(:exec :integer :float :code :boolean :auxiliary :tag :zip))
 (def max-number-magnitude 1000000000000)
 (def min-number-magnitude 1.0E-10)
@@ -268,7 +268,7 @@ list1 is from list2. The calculation is equivalent to the following:
 (defmacro define-push-state-structure []
   `(defstruct push-state ~@push-types))
 
-(define-push-state-structure)
+(eval (macroexpand '(define-push-state-structure)))
 
 (defn make-push-state
   "Returns an empty push state."
