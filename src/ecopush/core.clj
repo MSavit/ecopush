@@ -17,13 +17,13 @@
 (def ^{:doc "payoff for staying out"}
   *nonentry-payoff* 1)
 
-;;; Strategy record. Code is the actual code, and type specifies whether or not the code is clojure or push. Type can potentiall be extended to other jvm languages. type field can currently be either "push" or "clj". 
+;;; Strategy record.
+;; Code is the actual code, and type specifies whether or not the code is clojure or push.
+;; Type can potentiall be extended to other jvm languages. type field can currently be either "push" or "clj". 
 (defrecord Strategy [code type])
 
-;;; Each player is a record. Player record has the fields number, choices, payoffs, capacity, code.
+;;; Each player is a record. 
 (defrecord Player [number choices payoffs capacity strategy])
-
-;; (defstruct player :number :choices :payoffs :capacity :code)
 
 ;;; deref registered instructions once so we don't have to do it all the time
 (def reggie1 @registered-instructions)
@@ -35,65 +35,57 @@
 (defn push-wrapper
   "Handles exceptions when pulling off the :integer stack to produce 1,0."
   [c]
-  (cond
-   (nil? c) 0
-   (neg? c) 0
-   (odd? c) 0
-   (even? c) 1))
+  (cond (not (number? c)) 0			; can return :no-stack-item for empty stack
+	(nil? c) 0
+	(neg? c) 0
+	(odd? c) 0
+	(even? c) 1))
 
 (defn push-strat
   "player logic for push"
   [player-code player-decisions all-decisions]
-  (push-wrapper
-   (top-item :integer
-	     (run-push
-	      player-code
-	      (->>
-	       (make-push-state)
-	       (push-item player-decisions :auxiliary) ; push player-decisions onto aux stack 
-	       (push-item all-decisions :auxiliary) ; push all-decisions onto aux stack 
-	       (push-item 1 :integer)
-	       (push-item 0 :integer))))))
-
+  (push-wrapper (top-item :integer
+			  (run-push
+			   player-code
+			   (->>
+			    (make-push-state)
+			    (push-item player-decisions :auxiliary) ; push player-decisions onto aux stack 
+			    (push-item all-decisions :auxiliary) ; push all-decisions onto aux stack 
+			    (push-item 1 :integer)
+			    (push-item 0 :integer))))))
 
 ;;; Logic for players. If the player has a strategy in push, then run the push-code with push-strat.
-;;; If the player has a clojure strategy, eval the strategy. Clojure strategies have access to player-decisions and all-decisions. 
+;; If the player has a clojure strategy, eval the strategy. Clojure strategies have access to player-decisions and all-decisions. 
 (defn player-logic [player-strategy player-decisions all-decisions]
-  "evaluates player strategy code based on strategy type"
+  "Evaluates player strategy code based on strategy type"
   (if (= (:type player-strategy) "push")
     (push-strat (:code player-strategy) player-decisions all-decisions)
     (eval (:code player-strategy))))
 
+;;; Pushlist is a list of strategy records
 (defn create-players [popsize capacity pushlist]
-  "create the initial struct of players with empty keys. If pushlist is shorter than population size,
+  "Create the initial struct of players with empty keys. If pushlist is shorter than population size,
 rest of population has last element of pushlist"
   (for [x (range 0 popsize)]
-    (Player. x [] [] capacity (Strategy. (:code (nth pushlist x (last pushlist))) (:type (nth pushlist x (last pushlist)))))))
-	     ;; (nth pushlist x (last pushlist)))))
+    (Player. x [] [] capacity (Strategy. (:code (nth pushlist x (last pushlist))) 
+					 (:type (nth pushlist x (last pushlist)))))))
 
-;; (struct-map player :number x :choices [] :payoffs [] :capacity capacity
-    ;; 		:code (cond		
-    ;; 		       (< (count pushlist) (inc x)) nil
-    ;; 		       :else (nth pushlist x)))))
-
+;;; potentially catch nil as it may errors
+;;; see (get-decisions) run after create players 
 (defn get-decisions
   "returns list of all player decisions for past round"
   [playerlist]
   (map #(last (:choices %)) playerlist))
-  ;; (map #(last (% :choices)) playerlist))
 
 (defn get-all-decisions
-  "returns list of all decisions for all players (before current round)"
+  "returns list of all decisions before current round for all players"
   [playerlist]
   (map #(:choices %) playerlist))
-
-  ;; (map #(% :choices) playerlist))
 
 (defn get-player-decisions
   "returns a list of individual player's past decisions"
   [playernum playerlist]
   (-> playerlist get-all-decisions (nth playernum)))
-  ;; (nth (get-all-decisions playerlist) playernum))
 
 (defn payoff-sum
   "sum the player decisions with proper weights"
@@ -101,45 +93,12 @@ rest of population has last element of pushlist"
   (+ 1 (* 2 (- capacity			; constants as def (from paper) 
 	       (apply + decisions)))))			; integrate other weights 
 
-;;; check to see if this works
+
 (defn apply-payoff			
   "add the payoff to each player"
   [payoff player-struct]
   (->> (if (zero? (last (:choices player-struct))) *nonentry-payoff* payoff)
        (update-in player-struct [:payoffs] conj)))
-  ;; (letfn [(payply [x] (update-in player-struct [:payoffs] conj x))
-  ;; 	  (decpay [] (if (zero? (last (:choices player-struct)))
-  ;; 		       *nonentry-payoff*
-  ;; 		       payoff))]
-  ;;   (-> decpay
-  ;; 	payply)))
-
-;; (->>
-;;  (if (zero? (last (:choices player-structs)))
-;;    *nonentry-payoff*
-;;    payoff)
-;;  (update-in player-struct [:payoffs] conj))
-
-;; (-> player-structs
-;;     (:choices)
-;;     (last)
-;;     (zero?))
-
-    ;; (payply (decpay))
-    ;; (if (zero? (last (:choices player-struct)))
-    ;;   (payply *nonentry-payoff*)
-    ;;   (payply payoff))))
-
-;; (payply
-;;  (if (zero? (last (:choices player-struct)))
-;;    *nonentry-payoff*
-;;    payoff))
-
-  ;; (if-let [pay (zero? (last (:choices player-struct)))]
-  ;;   )
-  ;; (if (zero? (last (player-struct :choices)))
-  ;;   (update-in player-struct [:payoffs] conj *nonentry-payoff*) ; do these better
-  ;;   (update-in player-struct [:payoffs] conj payoff)))
 
 (defn calculate-payoff
   "returns list of players with payoff applied"
@@ -149,9 +108,9 @@ rest of population has last element of pushlist"
 
 (defn player-decide
   "player decide working"
-  [player-structs]
-  (let [past-decisions (get-all-decisions player-structs)]
-    (map #(update-in % [:choices] conj (player-logic (:code %) (:choices %) past-decisions)) player-structs)))
+  [playerlist]
+  (let [past-decisions (get-all-decisions playerlist)]
+    (map #(update-in % [:choices] conj (player-logic (:strategy %) (:choices %) past-decisions)) playerlist)))
 
 (defn play-rounds
   "function to play rounds. returns list of player structs"
@@ -162,40 +121,16 @@ rest of population has last element of pushlist"
 	  (player-decide
 	   (play-rounds (dec roundnum) capacity pushlist))
 	  capacity)))
-
-
-;; (defn tail-play-rounds [rn cap pl]
-;;   (letfn [(pr
-;; 	    [cur nxt rn]
-;; 	    (if (zero? rn)
-;; 	      (Player. [] [] *popsize* cap pl)
-;; 	    )])
-;;   (pr rn cap pl)       
-;;   )
   
 (defn game
   "returns list of players with payoffs and choices in list of rounds"
   [pushlist]
-  (vec (flatten				; why is this a vec
-	(for [x *capacity-list*]
-	  (play-rounds *rounds-num* x pushlist)))))
-
-
-
-(repeatedly *popsize* #(random-code 10 @registered-instructions)) 
-
-(defrecord pushcoll [individuals errors total-error history ancestors])
-
-(defn make-pushcoll [& {:keys [individuals errors total-error history ancestors]
-			:or {individuals nil
-			     errors nil
-			     total-error nil
-			     history nil
-			     ancestors nil}}]
-  (pushcoll. individuals errors total-error history ancestors))
+  (flatten				
+   (for [x *capacity-list*]
+     (play-rounds *rounds-num* x pushlist))))
 
 (defn scores-map
-  "return this players with their payoff scores for game"
+  "return the players with their payoff scores for game"
   [pushlist]
   (let [data (game pushlist)]
     (for [x (range *popsize*)]
@@ -227,7 +162,6 @@ rest of population has last element of pushlist"
 	   (let [data (game pushlist)]
 	     (for [x (range *popsize*)]
 	       [(keyword (str x)) (apply + (map #(apply + (:payoffs %)) (filter #(= (:number %) x) data)))])))) ; messy, clean w/ flatten 
-
 
 ;;;;;;;;;;;;;;;;
 ;; strategies ;;

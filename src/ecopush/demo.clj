@@ -40,3 +40,9 @@
 (create-players 4 3 (cons (Strategy. (quote (rand-int 2)) "clj")
 			  (repeatedly 3 #(Strategy. (random-code 10 @registered-instructions) "push"))))
 
+(cons (repeatedly 3 #(Strategy. (random-code 10 @registered-instructions) "push")) (Strategy. (quote (rand-int 2)) "clj"))
+
+;;; play a game as combination of strategies
+(game (lazy-cat (repeatedly 3 #(Strategy. (quote (rand-int 2)) "clj")) (repeatedly 3 #(Strategy. (random-code 10 @registered-instructions) "push"))))
+
+(lazy-cat (repeatedly 3 #(Strategy. (quote (rand-int 2)) "clj")) (repeat 1 (Strategy. (random-code 10 @registered-instructions) "push")))
