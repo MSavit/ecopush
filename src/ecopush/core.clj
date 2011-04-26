@@ -65,8 +65,7 @@
 
 ;;; Pushlist is a list of strategy records
 (defn create-players [popsize capacity pushlist]
-  "Create the initial struct of players with empty keys. If pushlist is shorter than population size,
-rest of population has last element of pushlist"
+  "Create the initial struct of players with empty keys. If pushlist is shorter than population size, rest of population has last element of pushlist"
   (for [x (range 0 popsize)]
     (Player. x [] [] capacity (Strategy. (:code (nth pushlist x (last pushlist))) 
 					 (:type (nth pushlist x (last pushlist)))))))
