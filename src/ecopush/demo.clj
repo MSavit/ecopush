@@ -31,3 +31,12 @@
 	    (push-item 1 :integer)
 	    (push-item 0 :integer))))
 
+;;; create-players demos
+
+;;; create player list all with random push stragies
+(create-players 7 3 (repeatedly 7 #(Strategy. (random-code 10 @registered-instructions) "push")))
+
+;;; create player list with mix of clojure and push strategies
+(create-players 4 3 (cons (Strategy. (quote (rand-int 2)) "clj")
+			  (repeatedly 3 #(Strategy. (random-code 10 @registered-instructions) "push"))))
+

@@ -17,11 +17,11 @@
 (def ^{:doc "payoff for staying out"}
   *nonentry-payoff* 1)
 
-;;; Strategy record. Code is the actual code, and type specifies whether or not the code is clojure or push. Type can potentiall be extended to other jvm languages  
+;;; Strategy record. Code is the actual code, and type specifies whether or not the code is clojure or push. Type can potentiall be extended to other jvm languages. type field can currently be either "push" or "clj". 
 (defrecord Strategy [code type])
 
 ;;; Each player is a record. Player record has the fields number, choices, payoffs, capacity, code.
-(defrecord Player [number choices payoffs capacity code])
+(defrecord Player [number choices payoffs capacity strategy])
 
 ;; (defstruct player :number :choices :payoffs :capacity :code)
 
@@ -29,7 +29,6 @@
 (def reggie1 @registered-instructions)
 
 ;;; Game
-
 
 ;;; (player-logic) is expected to return a 1 or 0. However, pulling values off the :integer stack can return nil, so sanitize the input.
 ;;; Below is an example that returns 1 if the number is even, and 0 if it is odd. 
@@ -56,18 +55,21 @@
 	       (push-item 1 :integer)
 	       (push-item 0 :integer))))))
 
-(defn player-logic [player-code player-decisions all-decisions]
-  "evaluates player code"
-  ;; (rand-int 2)
-  ;; (push-strat player-code player-decisions all-decisions)
-  (push-strat player-code)
-  )
+
+;;; Logic for players. If the player has a strategy in push, then run the push-code with push-strat.
+;;; If the player has a clojure strategy, eval the strategy. Clojure strategies have access to player-decisions and all-decisions. 
+(defn player-logic [player-strategy player-decisions all-decisions]
+  "evaluates player strategy code based on strategy type"
+  (if (= (:type player-strategy) "push")
+    (push-strat (:code player-strategy) player-decisions all-decisions)
+    (eval (:code player-strategy))))
 
 (defn create-players [popsize capacity pushlist]
   "create the initial struct of players with empty keys. If pushlist is shorter than population size,
 rest of population has last element of pushlist"
   (for [x (range 0 popsize)]
-     (Player. x [] [] capacity (nth pushlist x (last pushlist)))))
+    (Player. x [] [] capacity (Strategy. (:code (nth pushlist x (last pushlist))) (:type (nth pushlist x (last pushlist)))))))
+	     ;; (nth pushlist x (last pushlist)))))
 
 ;; (struct-map player :number x :choices [] :payoffs [] :capacity capacity
     ;; 		:code (cond		
