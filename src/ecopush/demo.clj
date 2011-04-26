@@ -46,3 +46,10 @@
 (game (lazy-cat (repeatedly 3 #(Strategy. (quote (rand-int 2)) "clj")) (repeatedly 3 #(Strategy. (random-code 10 @registered-instructions) "push"))))
 
 (lazy-cat (repeatedly 3 #(Strategy. (quote (rand-int 2)) "clj")) (repeat 1 (Strategy. (random-code 10 @registered-instructions) "push")))
+
+(cat (Strategy. 'program "push") (Strategy. (quote (rand-int 2))))
+(cons (repeat 1 (Strategy. nil "push")) (repeat (Strategy. (quote (rand-int 2)))))
+
+(lazy-cat (repeatedly 1 #(Strategy. nil "push")) (repeatedly #(Strategy. (quote (rand-int 2)) "clj")))
+
+(lazy-cat (repeatedly 1 #(Strategy. nil "push")) (take (dec *popsize*) (repeatedly #(Strategy. (quote (rand-int 2)) "clj"))))

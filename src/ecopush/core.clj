@@ -66,7 +66,7 @@
   "Create the initial struct of players with empty keys. If pushlist is shorter than population size, rest of population has last element of pushlist"
   (for [x (range 0 popsize)]
     (let [xloc (nth pushlist x (last pushlist))]
-      (Slayer. x [] [] capacity (Strategy. (:code xloc) (:type xloc))))))
+      (Player. x [] [] capacity (Strategy. (:code xloc) (:type xloc))))))
 
 ;;; potentially catch nil as it may errors
 ;;; see (get-decisions) run after create players 
@@ -148,8 +148,39 @@
   (+ 1 (* 2 (- capacity			; constants as def (from paper)
 	       (apply + decisions)))))			; integrate other weights
 
+;;; build Strategy list
+;; (lazy-cat (repeatedly 1 #(Strategy. nil "push")) (take (dec *popsize*) (repeatedly #(Strategy. (quote (rand-int 2)) "clj"))))
+
+;; (defn fit
+;;   [prog]
+;;   (* 10
+;;      (first (scores-map (cons (Strategy. prog "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj")))))))
+
+(defn fit
+  [prog]
+  1000)
+
+;; (defn fit
+;;   [program]
+;;   (count (scores-map (lazy-cat (repeatedly 1 #(Strategy. program "push")) (take (dec *popsize*) (repeatedly #(Strategy. (quote (rand-int 2)) "clj")))))))
 
 
+(pushgp
+ :error-function (fn [program]
+		   (doall 1000)
+		   ;; (fit program)
+		   )
+ :atom-generators (concat
+		   (registered-for-type :integer)
+		   (registered-for-type :exec)
+		   (registered-for-type :auxiliary)
+		   (list (fn [] (rand-int 100))
+			 'in))
+ :mutation-probability 0.45
+ :crossover-probability 0.45
+ :simplification-probability 0.0
+ :reproductive-simplifications 10
+ )
 
 (defn scores-map1
   "return this players with their payoff scores for game"
@@ -240,6 +271,7 @@
 
 (defn -main [& args]
   (println "test of main")
+
   ;; (use (symbol (first args)))
   (System/exit 0)
   )

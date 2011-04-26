@@ -268,6 +268,7 @@ list1 is from list2. The calculation is equivalent to the following:
 (defmacro define-push-state-structure []
   `(defstruct push-state ~@push-types))
 
+
 (eval (macroexpand '(define-push-state-structure)))
 
 (defn make-push-state
