@@ -55,7 +55,8 @@
 			    (push-item 0 :integer))))))
 
 ;;; Logic for players. If the player has a strategy in push, then run the push-code with push-strat.
-;; If the player has a clojure strategy, eval the strategy. Clojure strategies have access to player-decisions and all-decisions. 
+;; If the player has a clojure strategy, eval the strategy.
+;; Clojure strategies have access to player-decisions and all-decisions. 
 (defn player-logic [player-strategy player-decisions all-decisions]
   "Evaluates player strategy code based on strategy type"
   (if (= (:type player-strategy) "push")
