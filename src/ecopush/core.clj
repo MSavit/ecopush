@@ -131,7 +131,7 @@
   [pushlist]
   (let [data (game pushlist)]
     (for [x (range *popsize*)]
-      (apply + (pmap #(apply + (:payoffs %)) (filter #(= (:number %) x) data))))))
+      (apply + (pmap #(apply + (:payoffs %)) (filter #(= (:number %) x) data)))))
 
 ;; (defn fit
 ;;   [prog]
@@ -152,31 +152,31 @@
 ;;   [program]
 ;;   (count (scores-map (lazy-cat (repeatedly 1 #(Strategy. program "push")) (take (dec *popsize*) (repeatedly #(Strategy. (quote (rand-int 2)) "clj")))))))
 
-(defn fit				;should wrap fn
-  "preliminary fitness function"
-  [program]
-  (doall
-   (let [scores (scores-map (cons (Strategy. program "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))
-	 best (apply max scores)
-	 gpscore (first scores)]
-     (list (* 100 (- best gpscore))))))
+  (defn fit				;should wrap fn
+    "preliminary fitness function"
+    [program]
+    (doall
+     (let [scores (scores-map (cons (Strategy. program "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))
+	   best (apply max scores)
+	   gpscore (first scores)]
+       (list (* 100 (- best gpscore)))))))
 
-(pushgp
- :error-function (fn [program]
-		   (doall
-		    (let [scores (scores-map (cons (Strategy. program "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))
-			  best (apply max scores)
-			  gpres (first scores)]
-		      (list (* 100 (- best gpres))))))
-  :atom-generators (concat
-		   (registered-for-type :integer)
-		   (registered-for-type :exec)
-		   (registered-for-type :auxiliary))
-  :population-size 10
-  :mutation-probability 0.45
-  :crossover-probability 0.45
-  :simplification-probability 0.0
-  :reproductive-simplifications 10)
+;; (pushgp
+;;  :error-function (fn [program]
+;; 		   (doall
+;; 		    (let [scores (scores-map (cons (Strategy. program "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))
+;; 			  best (apply max scores)
+;; 			  gpres (first scores)]
+;; 		      (list (* 100 (- best gpres))))))
+;;   :atom-generators (concat
+;; 		   (registered-for-type :integer)
+;; 		   (registered-for-type :exec)
+;; 		   (registered-for-type :auxiliary))
+;;   :population-size 10
+;;   :mutation-probability 0.45
+;;   :crossover-probability 0.45
+;;   :simplification-probability 0.0
+;;   :reproductive-simplifications 10)
 
 (defn scores-map1
   "return this players with their payoff scores for game"
