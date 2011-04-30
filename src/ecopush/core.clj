@@ -275,12 +275,12 @@
 (defn stratmap
   "maps sm onto strategy list"
   [pushprog stratlist]
-  (map #(sm pushprog %) stratlist))	; weird list stuff here (quote the list and then quote each element) 
+  (pmap #(sm pushprog %) stratlist))	; weird list stuff here (quote the list and then quote each element) 
 
 (defn gametest
   "test games"
   [pushcode stratlist]
-  (map #(scores-map %) (stratmap pushcode stratlist)))
+  (pmap #(scores-map %) (stratmap pushcode stratlist)))
 
 (defn mean
   "takes the mean of a list, assumes all elements are numbers"
@@ -304,7 +304,7 @@
   [scorelist]
   (if (empty? (first scorelist))
     0
-    (apply + (map #(- % (first (second scorelist))) (first scorelist)))))
+    (apply + (pmap #(- % (first (second scorelist))) (first scorelist)))))
 
 ;; (defn game-fitness
 ;;   "the fitness function for games"
@@ -321,23 +321,22 @@
 	      (cons (Strategy. pushprog "push")
 		    (repeatedly 1 #(Strategy. cljstrat "clj"))))
 	    (stratmap [pushprog stratlist]
-	      (map #(sm pushprog %) stratlist))
+	      (pmap #(sm pushprog %) stratlist))
 	    (gametest [pushcode stratlist]
-	      (map #(scores-map %) (stratmap pushcode stratlist)))
+	      (pmap #(scores-map %) (stratmap pushcode stratlist)))
 	    (test-fit [scorelist]
 	      (if (empty? (first scorelist))
 		0
-		(apply + (map #(- % (first (second scorelist))) (first scorelist)))))
+		(apply + (pmap #(- % (first (second scorelist))) (first scorelist)))))
 	    (fit-compare [scorelist]
 	      (let [pushval (first scorelist)]
 		(list (filter #(> % pushval) scorelist)
 		      (filter #(= % pushval) scorelist)
 		      (filter #(< % pushval) scorelist))))
 	    (sum-games [pushcode stratlist]
-	      (apply + (map #(test-fit %) (map fit-compare (gametest pushcode stratlist)))))]
+	      (apply + (pmap #(test-fit %) (pmap fit-compare (gametest pushcode stratlist)))))]
       (doall
        (list (sum-games program stratlist))))))
-
 
 
 (defn run [params]
