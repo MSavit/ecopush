@@ -53,3 +53,18 @@
 (lazy-cat (repeatedly 1 #(Strategy. nil "push")) (repeatedly #(Strategy. (quote (rand-int 2)) "clj")))
 
 (lazy-cat (repeatedly 1 #(Strategy. nil "push")) (take (dec *popsize*) (repeatedly #(Strategy. (quote (rand-int 2)) "clj"))))
+
+;;; map scores-map onto a list of strategies
+(map #(scores-map %) (stratmap (random-code 10 @registered-instructions) (list (quote (rand-int 2)))))
+
+;;; play game with two strategies
+(map #(scores-map %) (stratmap (random-code 10 @registered-instructions) (list (quote (rand-int 2)) 1 )))
+
+;;; play game with three strategies
+(map #(scores-map %) (stratmap (random-code 10 @registered-instructions) (list (quote (rand-int 2)) 1 0)))
+
+;;; get payoffs for each game 
+(map #(apply + %) (gametest (random-code 10 @registered-instructions) (list (quote (rand-int 2)) 1 0)))
+
+;;; make a map of games
+(genmap (map fit-compare (gametest (random-code 10 @registered-instructions) (list (quote (rand-int 2)) 1 0))))

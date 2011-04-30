@@ -131,7 +131,7 @@
   [pushlist]
   (let [data (game pushlist)]
     (for [x (range *popsize*)]
-      (apply + (pmap #(apply + (:payoffs %)) (filter #(= (:number %) x) data)))))
+      (apply + (pmap #(apply + (:payoffs %)) (filter #(= (:number %) x) data))))))
 
 ;; (defn fit
 ;;   [prog]
@@ -161,42 +161,125 @@
 	   gpscore (first scores)]
        (list (* 100 (- best gpscore)))))))
 
-;; (pushgp
-;;  :error-function (fn [program]
-;; 		   (doall
-;; 		    (let [scores (scores-map (cons (Strategy. program "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))
-;; 			  best (apply max scores)
-;; 			  gpres (first scores)]
-;; 		      (list (* 100 (- best gpres))))))
-;;   :atom-generators (concat
-;; 		   (registered-for-type :integer)
-;; 		   (registered-for-type :exec)
-;; 		   (registered-for-type :auxiliary))
-;;   :population-size 10
-;;   :mutation-probability 0.45
-;;   :crossover-probability 0.45
-;;   :simplification-probability 0.0
-;;   :reproductive-simplifications 10)
+(pushgp
+ :error-function (fn [program]
+		   (doall
+		    (let [scores (scores-map (cons (Strategy. program "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))
+			  best (apply max scores)
+			  gpres (first scores)]
+		      (list (* 100 (- best gpres))))))
+  :atom-generators (concat
+		   (registered-for-type :integer)
+		   (registered-for-type :exec)
+		   (registered-for-type :auxiliary))
+  :population-size 10
+  :mutation-probability 0.45
+  :crossover-probability 0.45
+  :simplification-probability 0.0
+  :reproductive-simplifications 10)
 
-(defn scores-map1
-  "return this players with their payoff scores for game"
-  [pushlist]
-  (let [data (game pushlist)]
-    (for [x (range *popsize*)]
-       (map #(apply + (:choices %)) (filter #(= (:number %) x) data)))))
+;;; pass run a population size, capacity list, game list
+;;; game list should be a set of strategies to employ  
 
-(defn average-payoff
-  "returns average payoff of players in game"
-  [pushlist]
-  (/ (apply + (scores-map pushlist)) *popsize*))
+(defn fit				;should wrap fn
+  "preliminary fitness function"
+  [program]
+  (doall
+   (let [scores (scores-map (cons (Strategy. program "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))
+	 best (apply max scores)
+	 gpscore (first scores)]
+     (list (* 100 (- best gpscore)))))))
 
-(defn winner-map
-  "returns the winners of the game sorted by payoffs. Key is player number, value is payoff total"
-  [pushlist]
-  (sort-by last >
-	   (let [data (game pushlist)]
-	     (for [x (range *popsize*)]
-	       [(keyword (str x)) (apply + (map #(apply + (:payoffs %)) (filter #(= (:number %) x) data)))])))) ; messy, clean w/ flatten 
+(defn sm
+  "builds list of push program and strategy"
+  [pushprog cljstrat]
+  (cons (Strategy. pushprog "push")
+	(repeatedly 1 #(Strategy. cljstrat "clj")))) ; need to get quoting here to work
+
+(defn stratmap
+  "maps sm onto strategy list"
+  [pushprog stratlist]
+  (map #(sm pushprog %) stratlist))	; weird list stuff here (quote the list and then quote each element) 
+
+(defn gametest
+  "test games"
+  [pushcode stratlist]
+  (map #(scores-map %) (stratmap pushcode stratlist)))
+
+(defn mean
+  "takes the mean of a list, assumes all elements are numbers"
+  [lst]
+  (/ (apply + lst)
+     (count lst)))
+
+(defn fit-compare
+  "compares the fitness"
+  [scorelist]
+  (let [pushval (first scorelist)]
+    (list
+      (filter #(> % pushval) scorelist)
+      (filter #(= % pushval) scorelist)
+      (filter #(< % pushval) scorelist))))
+
+(defn build-map
+  "build the map"
+  [scorelist gnum]
+  {(keyword (str gnum))
+   {:better (first scorelist)
+    :equal (second scorelist)
+    :worse (last scorelist)}})
+
+(defn genmap
+  [scorelist]
+  (apply merge (for [x (range 0  (count scorelist))]
+		 (build-map (nth scorelist x) x))))
+
+(defn fit-map
+  "make a map for fitness calculation of individual "
+  [pushcode stratlist]
+  (genmap (map fit-compare (gametest pushcode stratlist))))
+
+(defn run [params]
+  (let [popsize (:popsize params)
+	caplist (:caplist params)
+	gamelist (:gamelist params)]	; gamelist should be a list of strategies 
+    (pushgp
+     :error-function (fn [program]
+		       (doall
+			(let [scores (scores-map (cons (Strategy. program "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))
+			      best (apply max scores)
+			      gpres (first scores)]
+			  (list (* 100 (- best gpres))))))
+     :atom-generators (concat
+		       (registered-for-type :integer)
+		       (registered-for-type :exec)
+		       (registered-for-type :auxiliary))
+     :population-size 10
+     :mutation-probability 0.45
+     :crossover-probability 0.45
+     :simplification-probability 0.0
+     :reproductive-simplifications 10)))
+
+;; (defn scores-map1
+;;   "return this players with their payoff scores for game"
+;;   [pushlist]
+;;   (let [data (game pushlist)]
+;;     (for [x (range *popsize*)]
+;;        (map #(apply + (:choices %)) (filter #(= (:number %) x) data)))))
+
+;; (defn average-payoff
+;;   "returns average payoff of players in game"
+;;   [pushlist]
+;;   (/ (apply + (scores-map pushlist)) *popsize*))
+
+;; (defn winner-map
+;;   "returns the winners of the game sorted by payoffs. Key is player number, value is payoff total"
+;;   [pushlist]
+;;   (sort-by last >
+;; 	   (let [data (game pushlist)]
+;; 	     (for [x (range *popsize*)]
+;; 	       [(keyword (str x)) (apply + (map #(apply + (:payoffs %)) (filter #(= (:number %) x) data)))]))))
+					; messy, clean w/ flatten 
 
 (defn -main [& args]
   (println "test of main")
@@ -220,3 +303,5 @@
 ;;; juxt - http://richhickey.github.com/clojure/clojure.core-api.html#clojure.core/juxt
 
 ;;; push here
+
+;; http://faustus.webatu.com/clj-quick-ref.html#list
