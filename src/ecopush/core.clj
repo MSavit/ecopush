@@ -221,6 +221,46 @@
       (filter #(= % pushval) scorelist)
       (filter #(< % pushval) scorelist))))
 
+(defn square [n] (* n n))
+
+(defn test-fit
+  "sum the difference between every better player and the push player"
+  [scorelist]
+  (if (empty? (first scorelist))
+    0
+    (apply + (map #(- % (first (second scorelist))) (first scorelist)))))
+
+(defn sum-games
+  [pushprog stratlist]
+  (let [gametest (fn [pushcode stratlist]
+		   (map #(scores-map %) (stratmap pushcode stratlist)))
+	;; build strategy list with push program at beginning
+	sm (fn [pushprog cljstrat]
+	     (cons (Strategy. pushprog "push")
+		   (repeatedly 1 #(Strategy. cljstrat "clj"))))
+	;; 
+	stratmap (fn [pushprog stratlist]
+		   (map #(sm pushprog %) stratlist))
+	fcm (map fit-compare (gametest pushprog stratlist))
+	test-fit (fn [scorelist]
+		   (if (empty? (first scorelist))
+		     0
+		     (apply + (map #(- % (first (second scorelist))) (first scorelist)))))]
+    (apply + (map #(test-fit %) fcm))))
+
+
+;;; add all the values together
+(apply + (map #(test-fit %) (map fit-compare (gametest (random-code 10 @registered-instructions) (list (quote (rand-int 2)) 1 0)))))
+
+(defn game-fitness
+  "the fitness function for games"
+  [stratlist]
+  (fn [program]
+    (doall
+     (sum-games program stratlist))))
+
+
+
 (defn build-map
   "build the map"
   [scorelist gnum]
@@ -235,9 +275,24 @@
 		 (build-map (nth scorelist x) x))))
 
 (defn fit-map
-  "make a map for fitness calculation of individual "
+  "make a map for fitness calculation of individual"
   [pushcode stratlist]
   (genmap (map fit-compare (gametest pushcode stratlist))))
+
+(defn fit-game
+  "fitness function for the game"
+  [scorelist]
+  (for [x (range 0 (count scorelist))]
+    ;; (map #(- % (second (nth scorelist x))) (first (nth scorelist x)))
+    (if (empty? (first (nth scorelist x)))
+      0
+      (let [scores (map #(- % (first (second (nth scorelist x))) ) (first (nth scorelist x)))]
+	(map #(if (seq? %)
+		(apply + %)
+		%)
+	     scores)))))
+
+
 
 (defn run [params]
   (let [popsize (:popsize params)
