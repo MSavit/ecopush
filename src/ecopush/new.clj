@@ -108,7 +108,7 @@
      :atom-generators (concat
 		       (registered-for-type :integer)
 		       (registered-for-type :exec)
-		       (registered-for-type :auxiliary))
+		       (registered-for-type :auxiliary)) ;there may be no such thing
      :population-size 10
      :mutation-probability 0.45
      :crossover-probability 0.45

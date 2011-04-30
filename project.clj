@@ -14,4 +14,5 @@
   :dev-dependencies [[swank-clojure "1.2.1"]
 		     [marginalia "0.5.0"]
 		     [lein-clojars "0.6.0"]]
+  ;; :jvm-opts ["-XmX1024m"]
   :main ecopush.core)

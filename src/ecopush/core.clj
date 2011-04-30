@@ -306,14 +306,6 @@
     0
     (apply + (pmap #(- % (first (second scorelist))) (first scorelist)))))
 
-;; (defn game-fitness
-;;   "the fitness function for games"
-;;   [stratlist]
-;;   (fn [program]
-;;     (doall
-;;      (sum-games program stratlist))))
-					; sum-games is not defined right now
-
 (defn fit-fn
   [stratlist]
   (fn [program]
@@ -338,7 +330,6 @@
       (doall
        (list (sum-games program stratlist))))))
 
-
 (defn run [params]
   (let [popsize (:popsize params)
 	caplist (:caplist params)
@@ -359,13 +350,6 @@
       :caplist (range 1 20 1)
       :gamelist (list (quote (rand-int 2)) 0 1)
       })
-
-;; (fn [program]
-;; 		       (doall
-;; 			(let [scores (scores-map (cons (Strategy. program "push") (repeatedly 1 #(Strategy. (quote (rand-int 2)) "clj"))))
-;; 			      best (apply max scores)
-;; 			      gpres (first scores)]
-;; 			  (list (* 100 (- best gpres))))))
 
 ;; (defn build-map
 ;;   "build the map"
@@ -431,3 +415,4 @@
 
 ;; http://faustus.webatu.com/clj-quick-ref.html#list
 ;; performace http://gnuvince.wordpress.com/2009/05/11/clojure-performance-tips/
+;; http://jan.rychter.com/enblog/2009/7/20/clojure-performance-tuning.html
