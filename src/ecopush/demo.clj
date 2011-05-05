@@ -179,3 +179,62 @@
      :crossover-probability 0.45
      :simplification-probability 0.0
      :reproductive-simplifications 10)))
+
+(defn avg [total num]
+  (/ total num))
+
+(defn mf1 [pc pd ad c popsize]
+  (let [fad (partition pd ad)]
+    
+    (
+
+     (for [x (range *popsize*)]
+      (apply + (map #(nth % x fad) pd))))
+    
+
+    ))
+
+
+(defn player-logic [player-code player-decisions all-decisions capacity]
+  "player logic"
+;  Uses average
+(let [totalparticipation
+(loop [totalparticipation (list)]
+  (if (= (count totalparticipation) (- (/ (+ 1 capacity) 2) 1))
+    totalparticipation
+    (recur (cons (apply + (map # (nth % (count totalparticipation)) all-decisions)) totalparticipation))))]
+
+(let [playerchange
+(loop [playerchange (list)]
+(if (= (count playerchange) (- (/ (+ 1 capacity) 2) 2))
+playerchange
+(recur (cons (- (nth totalparticipation (+ 1 (count playerchange))) (nth totalparticipation (count playerchange))) playerchange))))]
+
+(if (< capacity 4)
+   0
+   (if (< (+ (/ (apply + playerchange) 2) (last totalparticipation)) capacity)
+     1
+     0)))))
+
+(defn player-logic [player-code player-decisions all-decisions capacity]
+  "player logic"
+;  Uses Median
+(let [totalparticipation
+(loop [totalparticipation (list)]
+  (if (= (count totalparticipation) (- (/ (+ 1 capacity) 2) 1))
+    totalparticipation
+    (recur (cons (apply + (map # (nth % (count totalparticipation)) all-decisions)) totalparticipation))))]
+
+(let [playerchange
+(loop [playerchange (list)]
+(if (= (count playerchange) (- (/ (+ 1 capacity) 2) 2))
+playerchange
+(recur (cons (- (nth totalparticipation (+ 1 (count playerchange))) (nth totalparticipation (count playerchange))) playerchange))))]
+
+(if (< capacity 4)
+   0
+   (if (< (+ (if ((count playerchange) odd?)
+(nth playerchange (/ (- (count playerchange) 1) 2))
+(/ (+ (nth playerchange (/ (count playerchange) 2)) (nth playerchange (/ (- (count playerchange) 2) 2))) 2)) (last totalparticipation)) capacity)
+     1
+     0)))))
