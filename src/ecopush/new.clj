@@ -115,6 +115,6 @@
      :simplification-probability 0.0
      :reproductive-simplifications 10)))
 
-(run {:popsize 10
+#_(run {:popsize 10
       :caplist (range 1 20 1)
       :strategies (list (quote (rand-int 2)) 0 1)})
