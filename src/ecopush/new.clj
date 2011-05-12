@@ -42,10 +42,10 @@
 		     (Player. x [] [] capacity)))))
 	  ;; get current player decisions 
 	  (get-decisions [playerlist]
-	    (map #(last (:choices %)) playerlist))
+	    (pmap #(last (:choices %)) playerlist))
 	  ;; get all player decisions
 	  (get-all-decisions [playerlist]
-	    (map #(:choices %) playerlist))
+	    (pmap #(:choices %) playerlist))
 	  ;; get specific player decisions
 	  (get-player-decisions [playernum playerlist]
 	    (-> playerlist get-all-decisions (nth playernum)))
@@ -57,10 +57,19 @@
 		 (update-in player-struct [:payoffs] conj)))
 	  (calculate-payoff [playerlist capacity]
 	    (let [payoff (payoff-sum (get-decisions playerlist) capacity)]
-	      (map #(apply-payoff payoff %) playerlist)))
+	      (pmap #(apply-payoff payoff %) playerlist)))
 	  (player-decide [playerlist]
 	    (let [past-decisions (get-all-decisions playerlist)]
-	      (map #(update-in % [:choices] conj (player-logic (:strategy %) (:choices %) past-decisions)) playerlist)))
+	      (pmap #(update-in % [:choices] conj (player-logic (:strategy %) (:choices %) past-decisions)) playerlist)))
+	  (pr [roundnum capacity pushlist]
+	    (loop [gamestate (create-players popsize capacity pushlist)
+		   cnt 0
+		   maxcount roundnum]
+	      (if (> cnt maxcount)	;error
+		gamestate
+		(recur (-> gamestate (player-decide) (calculate-payoff capacity))
+		       (inc cnt)
+		       maxcount))))
 	  (play-rounds [roundnum capacity & [pushlist]]
 	    (if (zero? roundnum)
 	      (create-players popsize capacity pushlist)
@@ -68,12 +77,15 @@
 		  (player-decide)
 		  (calculate-payoff capacity))))
 	  (game [pushlist]
-	    (-> (for [x capacity-list] (play-rounds rounds-num x pushlist))
+	    (-> (for [x capacity-list] (pr rounds-num x pushlist))
 		(flatten)))
 	  (return-map [pushlist]
 	    (for [x (range popsize)]
-	      (apply + (map #(apply + (:payoffs %)) (filter #(= (:number %) x) (game pushlist))))))]
+	      (apply + (pmap #(apply + (:payoffs %)) (filter #(= (:number %) x) (game pushlist))))))]
     (return-map pushlist))))
+
+;; 33, 30, 80, 84
+;; fix calls to eval
 
 (defn fit-fn
   [stratlist]
@@ -82,22 +94,30 @@
 	      (cons (Strategy. pushprog "push")
 		    (repeatedly 1 #(Strategy. cljstrat "clj"))))
 	    (stratmap [pushprog stratlist]
-	      (map #(sm pushprog %) stratlist))
+	      (pmap #(sm pushprog %) stratlist))
 	    (gametest [pushcode stratlist]
-	      (map #(scores-map %) (stratmap pushcode stratlist)))
+	      (pmap #(scores-map %) (stratmap pushcode stratlist)))
 	    (test-fit [scorelist]
 	      (if (empty? (first scorelist))
 		0
-		(apply + (map #(- % (first (second scorelist))) (first scorelist)))))
+		(apply + (pmap #(- % (first (second scorelist))) (first scorelist)))))
 	    (fit-compare [scorelist]
 	      (let [pushval (first scorelist)]
 		(list (filter #(> % pushval) scorelist)
 		      (filter #(= % pushval) scorelist)
 		      (filter #(< % pushval) scorelist))))
 	    (sum-games [pushcode stratlist]
-	      (apply + (map #(test-fit %) (map fit-compare (gametest pushcode stratlist)))))]
-      (doall
-       (list (sum-games program stratlist))))))
+	      (list (apply + (pmap #(test-fit %) (pmap fit-compare (gametest pushcode stratlist))))))
+	    
+	    (sum-games2 [pushcode stratlist]
+	      (pmap #(test-fit %) (pmap fit-compare (gametest pushcode stratlist))))]
+      ;; (doall
+      ;;  (list (sum-games program stratlist)))
+      ;; (sum-games2 program stratlist)
+      (sum-games program stratlist)
+      )))
+
+
 
 (defn run [params]
   (let [popsize (:population params)
@@ -115,6 +135,6 @@
      :simplification-probability 0.0
      :reproductive-simplifications 10)))
 
-#_(run {:popsize 10
+(run {:popsize 10
       :caplist (range 1 20 1)
       :strategies (list (quote (rand-int 2)) 0 1)})

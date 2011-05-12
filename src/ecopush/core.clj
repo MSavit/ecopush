@@ -119,6 +119,16 @@
 	   (play-rounds (dec roundnum) capacity pushlist))
 	  capacity)))
 
+(defn pr [roundnum capacity pushlist]
+  (loop [gamestate (create-players *popsize* capacity pushlist)
+	 cnt 0
+	 maxcount roundnum]
+    (if (> cnt maxcount)
+      gamestate
+      (recur (-> gamestate (player-decide) (calculate-payoff capacity))
+	     (inc cnt)
+	     maxcount))))
+
 (defn game
   "returns list of players with payoffs and choices in list of rounds"
   [pushlist]
@@ -252,3 +262,4 @@
 ;; http://jan.rychter.com/enblog/2009/7/20/clojure-performance-tuning.html
 ;; http://sites.google.com/site/gpredcomp/7-baseline-models
 ;; http://sites.google.com/site/gpredcomp/9-references
+;; http://clojure.org/java_interop#Java%20Interop-Type%20Hints
