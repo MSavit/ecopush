@@ -6,14 +6,12 @@
    [incanter.core]]
 (:gen-class))
 
-
 (defn linear-payoff
   "linear payoff function"
   [d v r c m]
   (if (= d 0)
     v
-    (+
-     v (* r (- c m)))))
+    (+ v (* r (- c m)))))
 
 (defn smne
   [i N c]
@@ -41,17 +39,34 @@
   [propensities]
   (map linear-choice-rule propensities))
 
-;;; write this ;)
-(defn previous-propensity
-  "take the previus propensity for the player"
-  []
-  nil)
-
-;;; write this ;)
 (defn previous-strategy
   "return the previous strategy"
-  []
-  nil)
+  [pnum past-round]
+  (nth (nth past-round pnum) 3))
+
+(defn in-propensity
+  [pnum past-round]
+  (nth (nth past-round pnum) 2))
+
+(defn out-propensity
+  [pnum past-round]
+  (nth (nth past-round pnum) 1))
+
+(defn previous-propensity
+ "return the previous propensity"
+ [num pnum past-round]
+ (if (= 1 num)
+   (in-propensity pnum past-round)
+   (out-propensity pnum past-round)))
+
+(defn decision
+  [gamelist v r capacity population]
+  (let [past-round (last gamelist)
+	previous-entrants (apply + past-round)]
+    (loop [i (count past-round) gs '()]
+      (if (= 0 i)
+	gs
+	(recur (dec i) (conj gs (simple-reinforcement i past-round v r capacity previous-entrants)))))))
 
 (defn simple-reinforcement
   [n past-round v r capacity previous-entrants]
@@ -106,6 +121,8 @@
     (map #(linear-payoff % 1 1 20 entered) gamestate)))
 
 
+
+
 ;;; include popsize
 (defn play-game
   [n gamelist push strat]
@@ -123,7 +140,6 @@
   [game]
   (/ 1 (apply + (map first game))))
 
-
 (def strat-enter
   (fn [x]
     1))
@@ -133,33 +149,38 @@
     0))
 
 (defn fitfn
-  [population rounds]
+  [population rounds strat]
   (fn [program]
-    (list
-     (/ 1
-	(+ 0.01
-	   (apply + (map first
-			 (play-game rounds '[] program (list strat-rand)))))))))
+    (let [stratlist (repeat (dec population) strat)]
+      (list
+       (push-payoff-sum
+	(play-game rounds '[] program stratlist))))))
 
 (defn run [params]
   (let [population (:population params)
 	capacity (:capacity params)
-	rounds (:rounds params)]
+	rounds (:rounds params)
+	strat (:strategy params)]
     (pushgp
-     :error-function (fitfn population rounds))))
+     :error-function (fitfn population rounds strat))))
 
-;; (defn -main [& args]
-;;   (with-command-line args
-;;     "Ecopush v.0"
-;;     [[population "Population size" 10]
-;;      [capacity "Capacity value " 20]
-;;      [rounds "Number of rounds" 10]]
-;;     (binding [*population* population
-;; 	      *capacity* capacity
-;; 	      *rounds* rounds]
-;;       (run {:population *population*
-;; 	    :capacity *capacity*
-;; 	    :rounds *rounds*}))))
+#_(run {:population 4
+      :capacity 3
+      :rounds 4
+      :strategy strat-enter})
+
+(defn -main [& args]
+  (with-command-line args
+    "Ecopush v.0"
+    [[population "Population size" 10]
+     [capacity "Capacity value " 20]
+     [rounds "Number of rounds" 10]
+     [strategy "Strategy" strat-enter]]
+    (run {:population population
+	  :capacity capacity
+	  :rounds rounds
+	  :strategy strategy})))
+
 
 
 ;; switch to clargon
