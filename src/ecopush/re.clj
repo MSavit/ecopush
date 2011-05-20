@@ -1,7 +1,11 @@
 (ns ecopush.re
+
   [use [ecopush.push]
    [clojure.contrib.math :only (round)]
-   [incanter.core]])
+   [clojure.contrib.command-line]
+   [incanter.core]]
+(:gen-class))
+
 
 (defn linear-payoff
   "linear payoff function"
@@ -79,6 +83,10 @@
 	(+ (exp value)
 	   1)))))
 
+(def strat-rand
+  (fn [x]
+    (rand-int 2)))
+
 (defn push-eval
   [code gamelist]
   (activation
@@ -91,12 +99,11 @@
 ;v r c m
 (defn play
   [gamelist push strat]
-  (let [gamestate (cons
-		   (push-eval push gamelist)
-		   (map (fn [x] (x gamelist)) strat))
+  (let [gamestate  (cons
+		    (push-eval push gamelist)
+		    (map (fn [x] (x gamelist)) strat))
 	entered (apply + gamestate)]
-    (map #(linear-payoff % 1 1 20 entered)
-	 gamestate)))
+    (map #(linear-payoff % 1 1 20 entered) gamestate)))
 
 
 ;;; include popsize
@@ -111,29 +118,49 @@
   [x]
   (* x x))
 
-(defn fitfn
-  [rounds]
-  (fn [program]
-    (list    (/ 1
-		(apply + (map first
-			      (play-game rounds
-					 '[]
-					 program
-					 (list (fn [x] (rand-int 2))
-					       (fn [x] (rand-int 2)))
-					 ;; (list (fn [x] 1)
-					 ;;       (fn [x] 0))
+(defn push-payoff-sum
+  "Get payoffs of push player for game and return 1/payoff-sum"
+  [game]
+  (/ 1 (apply + (map first game))))
 
-					 )))))
-))
+
+(def strat-enter
+  (fn [x]
+    1))
+
+(def strat-out
+  (fn [x]
+    0))
+
+(defn fitfn
+  [population rounds]
+  (fn [program]
+    (list
+     (/ 1
+	(+ 0.01
+	   (apply + (map first
+			 (play-game rounds '[] program (list strat-rand)))))))))
 
 (defn run [params]
-  (let [popsize (:population params)
+  (let [population (:population params)
 	capacity (:capacity params)
 	rounds (:rounds params)]
     (pushgp
-     :error-function (fitfn rounds))))
+     :error-function (fitfn population rounds))))
 
-(run {:popsize 3
-	:capacity 20
-	:rounds 6})
+;; (defn -main [& args]
+;;   (with-command-line args
+;;     "Ecopush v.0"
+;;     [[population "Population size" 10]
+;;      [capacity "Capacity value " 20]
+;;      [rounds "Number of rounds" 10]]
+;;     (binding [*population* population
+;; 	      *capacity* capacity
+;; 	      *rounds* rounds]
+;;       (run {:population *population*
+;; 	    :capacity *capacity*
+;; 	    :rounds *rounds*}))))
+
+
+;; switch to clargon
+;; http://jakemccrary.com/blog/2011/04/12/command-line-arguments-in-clojure.html
