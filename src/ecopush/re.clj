@@ -1,10 +1,9 @@
 (ns ecopush.re
-
+  (:gen-class)
   [use [ecopush.push]
    [clojure.contrib.math :only (round)]
    [clojure.contrib.command-line]
-   [incanter.core]]
-(:gen-class))
+   [incanter core stats]])
 
 (defn linear-payoff
   "linear payoff function"
@@ -13,10 +12,51 @@
     v
     (+ v (* r (- c m)))))
 
-(defn smne
-  [i N c]
-  (/ (- c 1)
-     (- N 1)))
+(defn decision
+  [gamelist v r capacity population reinforcement]
+  (let [past-round (last gamelist)
+	previous-entrants (apply + past-round)]
+    (loop [i (count past-round) gs '()]
+      (if (= 0 i)
+	gs
+	(recur (dec i) (conj gs (reinforcement i past-round v r capacity previous-entrants population)))))))
+
+(defn le
+  "less than or equal to"
+  [a b]
+  (if (or (< a b) (= a b))
+    true
+    nil))
+
+(def smne
+  (fn
+    [i past-round v r capacity previous-entrants population]
+    (if (le (rand 1) (/ (- capacity 1) (- population 1)))
+      0
+      1)))
+
+(defn smne-applic
+  "check if smne is applicable for population size and capacity"
+  [capacity population]
+  (let [smeval (/ (* population (- capacity 1)) (- population 1))]
+    (if (and (> capacity smeval) (> smeval (- capacity 1)))
+      true
+      nil)))
+
+(defn applic
+  "check if sme is applicable"
+  [cap pop]
+  (float (* pop (/
+	  (- cap 1)
+	  (- pop 1)))))
+
+
+
+(def strat-smne
+  (fn [population & x]
+    (if (le (rand 1) (/ (- 20 1) (- population 1)))
+      0
+      1)))
 
 (defn smne2
   [plist c]
@@ -29,6 +69,7 @@
 		   (repeat k 0)
 		   (repeat r (/ (+ j (* (- c 1 j) (- N j k)))
 				(- N j k 1)))))))
+
 (defn linear-choice-rule
   [propensities]
   (let [in (first propensities)
@@ -59,17 +100,10 @@
    (in-propensity pnum past-round)
    (out-propensity pnum past-round)))
 
-(defn decision
-  [gamelist v r capacity population]
-  (let [past-round (last gamelist)
-	previous-entrants (apply + past-round)]
-    (loop [i (count past-round) gs '()]
-      (if (= 0 i)
-	gs
-	(recur (dec i) (conj gs (simple-reinforcement i past-round v r capacity previous-entrants)))))))
+
 
 (defn simple-reinforcement
-  [n past-round v r capacity previous-entrants]
+  [n past-round v r capacity previous-entrants population]
   (list
    (+ (previous-propensity 1)
       (* previous-strategy
@@ -80,11 +114,11 @@
 	      v)))))
 
 (defn hypothetical-reinforcement
-  [n past-round v r c previous-entrants]
+  [n past-round v r capacity previous-entrants population]
   (list
    (+ (previous-propensity 1)
       v (* r
-	   (- c previous-entrants (- 1 previous-strategy))))
+	   (- capacity previous-entrants (- 1 previous-strategy))))
    (+ (previous-propensity 0)
       v)))
 
@@ -99,7 +133,7 @@
 	   1)))))
 
 (def strat-rand
-  (fn [x]
+  (fn [& x]
     (rand-int 2)))
 
 (defn push-eval
@@ -111,25 +145,32 @@
 		   (push-item gamelist :auxiliary))
 	      (run-push code)))))
 
+;;; build strategy wrapper - see decide
+(defn strat-map
+  [gamelist population strat]
+  (repeatedly (dec population) #(strat population gamelist))
+  ;; (if (empty? gamelist)
+  ;;   (repeatedly (dec population) #(strat population gamelist))
+  ;;   (map #(strat population %) gamelist))
+  )
+
 ;v r c m
 (defn play
-  [gamelist push strat]
-  (let [gamestate  (cons
+  [gamelist push strat population]
+  (let [gamestate  (flatten (cons
 		    (push-eval push gamelist)
-		    (map (fn [x] (x gamelist)) strat))
+		    ;; (map (fn [x] (x gamelist)) strat)
+		    (strat-map gamelist population strat)
+		    ))
 	entered (apply + gamestate)]
     (map #(linear-payoff % 1 1 20 entered) gamestate)))
 
-
-
-
-;;; include popsize
 (defn play-game
-  [n gamelist push strat]
+  [rounds gamelist push strat population]
   (loop [r 0 g gamelist]
-    (if (= n r)
+    (if (= rounds r)
       g
-      (recur (inc r) (conj g (play g push strat))))))
+      (recur (inc r) (conj g (play g push strat population))))))
 
 (defn square
   [x]
@@ -148,13 +189,47 @@
   (fn [x]
     0))
 
+(defn mermap
+  [lists]
+  (if (empty? (first lists))
+    (remove empty? lists)
+    (cons (map first lists)
+	  (mermap (map rest lists)))))
+
+(defn push-sum
+  [game]
+  (let [gdata (mermap game)]
+    (/ (apply + (first gdata))
+       (count gdata))))
+
+(defn average-score
+  [game]
+  (let [player-count (count (first game))
+	player-totals (map #(/ (apply + %) player-count) (mermap game))]
+    (/ (apply + player-totals) player-count)))
+
+;;; interesting with e and x^3
+(defn push-pop-avg-diff			; negative is better
+  [game]
+  (- (average-score game) (push-sum game)))
+
+(defn ea-avg-diff
+  [game]
+  (exp (pow (push-pop-avg-diff game) 2)))
+
+
+;;; could be total max payoff - push payoff
 (defn fitfn
   [population rounds strat]
   (fn [program]
-    (let [stratlist (repeat (dec population) strat)]
+    (let [stratlist (repeat (dec population) strat)
+	  game (play-game rounds '[] program strat population)]
       (list
-       (push-payoff-sum
-	(play-game rounds '[] program stratlist))))))
+       (ea-avg-diff game)
+       ;; (push-payoff-sum
+       ;; 	(play-game rounds '[] program strat population))
+
+       ))))
 
 (defn run [params]
   (let [population (:population params)
@@ -164,10 +239,10 @@
     (pushgp
      :error-function (fitfn population rounds strat))))
 
-#_(run {:population 4
-      :capacity 3
-      :rounds 4
-      :strategy strat-enter})
+(run {:population 21
+      :capacity 20
+      :rounds 500
+      :strategy strat-smne})
 
 (defn -main [& args]
   (with-command-line args
