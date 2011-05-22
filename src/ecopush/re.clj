@@ -58,6 +58,8 @@
       0
       1)))
 
+
+
 (defn smne2
   [plist c]
   (shuffle plist)
@@ -136,6 +138,10 @@
   (fn [& x]
     (rand-int 2)))
 
+
+
+
+
 (defn push-eval
   [code gamelist]
   (activation
@@ -182,12 +188,18 @@
   (/ 1 (apply + (map first game))))
 
 (def strat-enter
-  (fn [x]
+  (fn [a b]
     1))
 
 (def strat-out
-  (fn [x]
+  (fn [a b]
     0))
+
+(def strat-mixedrand
+  (fn [population gamelist]
+    ((rand-nth
+      (list strat-mixedrand strat-rand strat-smne strat-enter strat-out))
+     population gamelist)))
 
 (defn mermap
   [lists]
@@ -213,10 +225,21 @@
   [game]
   (- (average-score game) (push-sum game)))
 
+(defn push-pop-best-diff
+  [game]
+  "difference b/tw average of all better players and push player"
+  (let [player-totals (map #(apply + %) (mermap game))
+	push-score (first player-totals)
+	player-scores (remove #(<= % push-score) (rest player-totals))]
+    (if (empty? player-scores)
+      0
+      (- (/ (apply + player-scores) (count player-scores))
+	 push-score))))
+
+
 (defn ea-avg-diff
   [game]
-  (exp (pow (push-pop-avg-diff game) 2)))
-
+  (exp (pow (push-pop-avg-diff game) 3)))
 
 ;;; could be total max payoff - push payoff
 (defn fitfn
@@ -225,7 +248,8 @@
     (let [stratlist (repeat (dec population) strat)
 	  game (play-game rounds '[] program strat population)]
       (list
-       (ea-avg-diff game)
+       (push-pop-best-diff game)
+       ;; (ea-avg-diff game)
        ;; (push-payoff-sum
        ;; 	(play-game rounds '[] program strat population))
 
@@ -242,7 +266,7 @@
 (run {:population 21
       :capacity 20
       :rounds 500
-      :strategy strat-smne})
+      :strategy strat-mixedrand})
 
 (defn -main [& args]
   (with-command-line args
