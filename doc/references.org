@@ -1,6 +1,0 @@
-# emacs org-mode, should render on github, will include tex for manual builds as well
-* links
-** git 
-[[http://www.eecs.harvard.edu/~cduan/technical/git/][understanding git conceptually]]
-
-Micah!

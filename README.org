@@ -1,7 +1,8 @@
 * ecopush
 
 This is a project repository for the Economic Games group of Research in Artificial Intelligence, Spring 2011, at [[http://hampshire.edu][Hampshire College]]. This project consists of
-a wiki, implementations of game theoretic applications using the Push Genetic Programming Platform and the Clojure programming Language. 
+a wiki, implementations of game theoretic applications using the Push Genetic Programming Platform and the Clojure programming Language. You can find more information 
+at the [[https://github.com/fconcklin/ecopush/wiki][wiki]] and the [[http://groups.google.com/group/ecopush][google groups discussion page]].
 
 * Usage
 
